@@ -164,7 +164,6 @@ footer{text-align:center;padding:2rem 0 0;font-size:0.65rem;color:var(--hint);le
     <div class="logo-sub">Debate entre modelos</div>
   </div>
   <div class="dots">
-    <div class="dot-pill"><span style="background:var(--claude)"></span>Claude</div>
     <div class="dot-pill"><span style="background:var(--gpt)"></span>GPT</div>
     <div class="dot-pill"><span style="background:var(--gemini)"></span>Gemini</div>
     <div class="dot-pill"><span style="background:var(--deepseek)"></span>DeepSeek</div>
@@ -227,7 +226,6 @@ footer{text-align:center;padding:2rem 0 0;font-size:0.65rem;color:var(--hint);le
 
 <script>
 const MODELS={
-  claude:{name:'Claude',color:'var(--claude)'},
   gpt:{name:'ChatGPT',color:'var(--gpt)'},
   gemini:{name:'Gemini',color:'var(--gemini)'},
   deepseek:{name:'DeepSeek',color:'var(--deepseek)'},
@@ -371,20 +369,23 @@ async function startRound(){
   btn.disabled=true;
   document.getElementById('feed').innerHTML='';
 
-  const history={claude:[],gpt:[],gemini:[],deepseek:[]};
+  const history={gpt:[],gemini:[],deepseek:[]};
   const transcript=[];
-  const nameMap={claude:'Claude',gpt:'ChatGPT',gemini:'Gemini',deepseek:'DeepSeek'};
-  const activeModels=['claude'];
+  const nameMap={gpt:'ChatGPT',gemini:'Gemini',deepseek:'DeepSeek'};
+  const activeModels=[];
   if(oKey)activeModels.push('gpt');
   if(gKey)activeModels.push('gemini');
   if(dKey)activeModels.push('deepseek');
+  if(activeModels.length===0){
+    document.getElementById('feed').innerHTML='<div class="empty-state"><span class="empty-big">!</span>Configure ao menos uma chave de API para iniciar o debate.</div>';
+    btn.disabled=false;return;
+  }
 
   async function ask(model,messages,round){
     const id=addMsg(model,round,'Pensando...',true);
     try{
       let text;
-      if(model==='claude')text=await callClaude(messages);
-      else if(model==='gpt')text=await callGPT(messages,oKey);
+      if(model==='gpt')text=await callGPT(messages,oKey);
       else if(model==='gemini')text=await callGemini(messages,gKey);
       else if(model==='deepseek')text=await callDeepSeek(messages,dKey);
       updateMsg(id,text,false);
@@ -427,7 +428,10 @@ async function startRound(){
   const synthMsg=[{role:'user',content:`Você mediou uma mesa redonda entre IAs sobre: "${topic}".\n\nDebate completo:\n\n${allText}\n\nEscreva uma síntese final que: (1) identifica o consenso entre os participantes, (2) destaca as melhores ideias únicas de cada modelo, (3) aponta divergências relevantes, (4) propõe uma visão integrada que vai além do que qualquer um disse sozinho. Escreva em prosa fluida, sem marcadores.`}];
   const sid=addMsg('synth','synth','Elaborando síntese...',true);
   try{
-    const st=await callClaude(synthMsg);
+    let st;
+    if(oKey) st=await callGPT(synthMsg,oKey);
+    else if(gKey) st=await callGemini(synthMsg,gKey);
+    else st=await callDeepSeek(synthMsg,dKey);
     updateMsg(sid,st,false);
   }catch(e){
     updateMsg(sid,'Erro na síntese: '+e.message,true);
