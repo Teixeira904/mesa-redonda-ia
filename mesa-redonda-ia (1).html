@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mesa Redonda IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #12121a;
+  --bg3: #1a1a25;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0eff8;
+  --muted: rgba(240,239,248,0.5);
+  --hint: rgba(240,239,248,0.28);
+  --claude: #a78bfa;
+  --gpt: #34d399;
+  --gemini: #60a5fa;
+  --deepseek: #f472b6;
+  --synth: #fbbf24;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.glow{
+  position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:800px;height:400px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(167,139,250,0.06) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:1.5rem 1rem 4rem;}
+
+header{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  padding:1.5rem 0 2rem;
+  border-bottom:1px solid var(--border);
+  margin-bottom:2rem;
+}
+.logo-title{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;}
+.logo-sub{font-size:0.68rem;color:var(--hint);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;}
+.dots{display:flex;gap:5px;flex-wrap:wrap;}
+.dot-pill{
+  display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;
+  border:1px solid var(--border);font-size:0.62rem;letter-spacing:0.05em;color:var(--muted);
+}
+.dot-pill span{width:5px;height:5px;border-radius:50%;}
+
+.section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1rem;overflow:hidden;}
+.section-toggle{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:0.875rem 1.25rem;background:none;border:none;cursor:pointer;
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:0.72rem;
+  letter-spacing:0.08em;text-transform:uppercase;text-align:left;
+}
+.section-toggle:hover{color:var(--text);}
+.arrow{transition:transform 0.2s;}
+.open .arrow{transform:rotate(180deg);}
+.section-body{display:none;padding:0 1.25rem 1.25rem;}
+.section-body.open{display:block;}
+
+.keys-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+@media(max-width:520px){.keys-grid{grid-template-columns:1fr;}}
+.key-field{display:flex;flex-direction:column;gap:5px;}
+.key-field label{font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--hint);}
+.key-field input{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.78rem;
+  outline:none;transition:border-color 0.2s;width:100%;
+}
+.key-field input:focus{border-color:var(--border2);}
+.key-field input::placeholder{color:var(--hint);}
+
+.key-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.btn{
+  font-family:'DM Mono',monospace;font-size:0.72rem;letter-spacing:0.04em;
+  padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;
+  border:1px solid var(--border2);background:transparent;color:var(--muted);transition:all 0.15s;
+}
+.btn:hover{background:var(--bg3);color:var(--text);}
+.btn.danger{border-color:rgba(244,114,182,0.3);color:rgba(244,114,182,0.5);}
+.btn.danger:hover{background:rgba(244,114,182,0.08);color:var(--deepseek);}
+.save-ok{font-size:0.7rem;color:var(--gpt);opacity:0;transition:opacity 0.3s;}
+.save-ok.show{opacity:1;}
+
+textarea#pInput{
+  width:100%;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem 1.25rem;
+  color:var(--text);font-family:'DM Mono',monospace;font-size:0.875rem;
+  line-height:1.6;resize:none;outline:none;transition:border-color 0.2s;
+  min-height:90px;margin-bottom:1rem;display:block;
+}
+textarea#pInput:focus{border-color:var(--border2);}
+textarea#pInput::placeholder{color:var(--hint);}
+
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;}
+.controls label{font-size:0.7rem;color:var(--hint);letter-spacing:0.06em;text-transform:uppercase;}
+select{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:7px 12px;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.78rem;outline:none;cursor:pointer;
+}
+.btn-start{
+  margin-left:auto;font-family:'Syne',sans-serif;font-size:0.85rem;font-weight:700;
+  padding:10px 24px;border-radius:var(--radius-sm);
+  background:var(--text);color:var(--bg);border:none;cursor:pointer;
+  transition:opacity 0.15s,transform 0.1s;
+}
+.btn-start:hover{opacity:0.88;}
+.btn-start:active{transform:scale(0.97);}
+.btn-start:disabled{opacity:0.3;cursor:not-allowed;transform:none;}
+
+.feed{display:flex;flex-direction:column;gap:10px;}
+.divider{display:flex;align-items:center;gap:10px;margin:4px 0;}
+.divider:before,.divider:after{content:'';flex:1;height:1px;background:var(--border);}
+.divider span{font-size:0.63rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--hint);white-space:nowrap;}
+
+.msg{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem 1.25rem;animation:fadeUp 0.3s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.msg.synth{background:var(--bg3);border-color:rgba(251,191,36,0.2);}
+.msg-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.model-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.model-name{font-size:0.72rem;font-weight:500;letter-spacing:0.04em;}
+.model-round{font-size:0.65rem;color:var(--hint);margin-left:auto;}
+.msg-body{font-size:0.82rem;line-height:1.75;color:rgba(240,239,248,0.72);white-space:pre-wrap;}
+.msg-body.thinking{font-style:italic;color:var(--hint);}
+.msg-body.thinking::after{content:'▋';animation:blink 0.9s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--hint);font-size:0.78rem;line-height:1.9;}
+.empty-big{font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--border2);display:block;margin-bottom:0.5rem;}
+
+footer{text-align:center;padding:2rem 0 0;font-size:0.65rem;color:var(--hint);letter-spacing:0.06em;}
+
+@media(max-width:480px){
+  .btn-start{width:100%;margin-left:0;text-align:center;}
+  .controls{flex-direction:column;align-items:flex-start;}
+  header{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="logo-title">Mesa Redonda IA</div>
+    <div class="logo-sub">Debate entre modelos</div>
+  </div>
+  <div class="dots">
+    <div class="dot-pill"><span style="background:var(--claude)"></span>Claude</div>
+    <div class="dot-pill"><span style="background:var(--gpt)"></span>GPT</div>
+    <div class="dot-pill"><span style="background:var(--gemini)"></span>Gemini</div>
+    <div class="dot-pill"><span style="background:var(--deepseek)"></span>DeepSeek</div>
+  </div>
+</header>
+
+<div class="section">
+  <button class="section-toggle" id="cfgToggle" onclick="toggleCfg()">
+    <span>Chaves de API</span>
+    <span class="arrow">▾</span>
+  </button>
+  <div class="section-body" id="cfgBody">
+    <div class="keys-grid">
+      <div class="key-field">
+        <label>OpenAI — ChatGPT</label>
+        <input type="password" id="oKey" placeholder="sk-..."/>
+      </div>
+      <div class="key-field">
+        <label>Google — Gemini</label>
+        <input type="password" id="gKey" placeholder="AIza..."/>
+      </div>
+      <div class="key-field">
+        <label>DeepSeek</label>
+        <input type="password" id="dKey" placeholder="sk-..."/>
+      </div>
+    </div>
+    <div class="key-actions">
+      <button class="btn" onclick="saveKeys()">Salvar no navegador</button>
+      <button class="btn danger" onclick="clearKeys()">Apagar chaves</button>
+      <span class="save-ok" id="saveOk">Salvo!</span>
+    </div>
+    <p style="font-size:0.67rem;color:var(--hint);margin-top:10px;line-height:1.6;">
+      As chaves ficam salvas no localStorage do seu navegador — nunca são enviadas a outros servidores além das APIs dos próprios modelos.
+    </p>
+  </div>
+</div>
+
+<textarea id="pInput" placeholder="Digite o tema ou pergunta para a mesa redonda...&#10;&#10;Ex: Qual o futuro da inteligência artificial nos próximos 10 anos?" rows="4"></textarea>
+
+<div class="controls">
+  <label>Rodadas:</label>
+  <select id="roundCount">
+    <option value="1">1 rodada</option>
+    <option value="2" selected>2 rodadas</option>
+    <option value="3">3 rodadas</option>
+  </select>
+  <button class="btn-start" id="askBtn" onclick="startRound()">Iniciar debate</button>
+</div>
+
+<div class="feed" id="feed">
+  <div class="empty-state">
+    <span class="empty-big">◎</span>
+    Configure as chaves e inicie um debate.<br>
+    Os modelos leem as respostas uns dos outros<br>e constroem um consenso juntos.
+  </div>
+</div>
+
+<footer>Mesa Redonda IA · Ctrl+Enter para enviar · chaves salvas localmente</footer>
+</div>
+
+<script>
+const MODELS={
+  claude:{name:'Claude',color:'var(--claude)'},
+  gpt:{name:'ChatGPT',color:'var(--gpt)'},
+  gemini:{name:'Gemini',color:'var(--gemini)'},
+  deepseek:{name:'DeepSeek',color:'var(--deepseek)'},
+  synth:{name:'Síntese',color:'var(--synth)'}
+};
+
+function toggleCfg(){
+  const t=document.getElementById('cfgToggle');
+  const b=document.getElementById('cfgBody');
+  const isOpen=b.classList.contains('open');
+  b.classList.toggle('open');
+  t.querySelector('.arrow').style.transform=isOpen?'':'rotate(180deg)';
+}
+
+function saveKeys(){
+  const map={ai_hub_okey:'oKey',ai_hub_gkey:'gKey',ai_hub_dkey:'dKey'};
+  let saved=false;
+  for(const[k,id] of Object.entries(map)){
+    const v=document.getElementById(id).value.trim();
+    if(v){localStorage.setItem(k,v);saved=true;}
+  }
+  if(saved){
+    const el=document.getElementById('saveOk');
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'),2000);
+  }
+}
+
+function clearKeys(){
+  ['ai_hub_okey','ai_hub_gkey','ai_hub_dkey'].forEach(k=>localStorage.removeItem(k));
+  ['oKey','gKey','dKey'].forEach(id=>{document.getElementById(id).value='';});
+}
+
+function loadKeys(){
+  const map={ai_hub_okey:'oKey',ai_hub_gkey:'gKey',ai_hub_dkey:'dKey'};
+  for(const[k,id] of Object.entries(map)){
+    const v=localStorage.getItem(k);
+    if(v)document.getElementById(id).value=v;
+  }
+}
+
+function addMsg(model,round,text,isThinking){
+  const feed=document.getElementById('feed');
+  feed.querySelectorAll('.empty-state').forEach(e=>e.remove());
+  const id='msg-'+model+'-'+round+'-'+Date.now();
+  const m=MODELS[model];
+  const roundLabel=round==='synth'?'síntese final':'rodada '+round;
+  const div=document.createElement('div');
+  div.className='msg'+(model==='synth'?' synth':'');
+  div.id=id;
+  div.innerHTML=`<div class="msg-hdr">
+    <span class="model-dot" style="background:${m.color}"></span>
+    <span class="model-name" style="color:${m.color}">${m.name}</span>
+    <span class="model-round">${roundLabel}</span>
+  </div>
+  <div class="msg-body${isThinking?' thinking':''}">${escHtml(text)}</div>`;
+  feed.appendChild(div);
+  div.scrollIntoView({behavior:'smooth',block:'nearest'});
+  return id;
+}
+
+function updateMsg(id,text,isThinking){
+  const el=document.getElementById(id);if(!el)return;
+  const b=el.querySelector('.msg-body');
+  b.className='msg-body'+(isThinking?' thinking':'');
+  b.textContent=text;
+}
+
+function addDivider(label){
+  const d=document.createElement('div');
+  d.className='divider';
+  d.innerHTML=`<span>${label}</span>`;
+  document.getElementById('feed').appendChild(d);
+}
+
+function escHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function callClaude(messages){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.content.map(b=>b.text||'').join('');
+}
+
+async function callGPT(messages,key){
+  const r=await fetch("https://api.openai.com/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify({model:"gpt-4o-mini",max_tokens:1000,messages})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+
+async function callGemini(messages,key){
+  const contents=messages.map(m=>({
+    role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]
+  }));
+  const r=await fetch("https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key="+key,{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({contents})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.candidates[0].content.parts[0].text;
+}
+
+async function callDeepSeek(messages,key){
+  const r=await fetch("https://api.deepseek.com/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify({model:"deepseek-chat",max_tokens:1000,messages})
+  });
+  const d=await r.json();
+  if(d.error)throw new Error(d.error.message);
+  return d.choices[0].message.content;
+}
+
+function buildCtx(topic,transcript,myName,instruction){
+  const lines=[`Você é ${myName} participando de uma mesa redonda com outras IAs sobre: "${topic}".`];
+  if(transcript.length){
+    lines.push('\nDebate até agora:\n');
+    transcript.forEach(t=>lines.push(`[${t.model}, rodada ${t.round}]: ${t.text}`));
+  }
+  lines.push('\n'+instruction);
+  return lines.join('\n');
+}
+
+async function startRound(){
+  const topic=document.getElementById('pInput').value.trim();
+  if(!topic)return;
+  const oKey=document.getElementById('oKey').value.trim();
+  const gKey=document.getElementById('gKey').value.trim();
+  const dKey=document.getElementById('dKey').value.trim();
+  const rounds=parseInt(document.getElementById('roundCount').value);
+  const btn=document.getElementById('askBtn');
+  btn.disabled=true;
+  document.getElementById('feed').innerHTML='';
+
+  const history={claude:[],gpt:[],gemini:[],deepseek:[]};
+  const transcript=[];
+  const nameMap={claude:'Claude',gpt:'ChatGPT',gemini:'Gemini',deepseek:'DeepSeek'};
+  const activeModels=['claude'];
+  if(oKey)activeModels.push('gpt');
+  if(gKey)activeModels.push('gemini');
+  if(dKey)activeModels.push('deepseek');
+
+  async function ask(model,messages,round){
+    const id=addMsg(model,round,'Pensando...',true);
+    try{
+      let text;
+      if(model==='claude')text=await callClaude(messages);
+      else if(model==='gpt')text=await callGPT(messages,oKey);
+      else if(model==='gemini')text=await callGemini(messages,gKey);
+      else if(model==='deepseek')text=await callDeepSeek(messages,dKey);
+      updateMsg(id,text,false);
+      return text;
+    }catch(e){
+      const err='Erro: '+e.message;
+      updateMsg(id,err,true);
+      return err;
+    }
+  }
+
+  addDivider('rodada 1 — perspectivas iniciais');
+  await Promise.all(activeModels.map(async model=>{
+    const myName=nameMap[model];
+    const msg=[{role:'user',content:buildCtx(topic,[],myName,'Responda ao tema com sua perspectiva em até 3 parágrafos. Seja direto e apresente suas ideias mais relevantes.')}];
+    history[model]=msg;
+    const text=await ask(model,msg,1);
+    transcript.push({model:myName,round:1,text});
+    history[model].push({role:'assistant',content:text});
+  }));
+
+  for(let round=2;round<=rounds;round++){
+    addDivider(`rodada ${round} — debate e complementação`);
+    await Promise.all(activeModels.map(async model=>{
+      const myName=nameMap[model];
+      const othersText=transcript
+        .filter(t=>t.model!==myName)
+        .map(t=>`[${t.model}, rodada ${t.round}]: ${t.text}`)
+        .join('\n\n');
+      const followUp=`Respostas dos outros participantes:\n\n${othersText}\n\nLeia as respostas acima. Identifique pontos onde concorda, discorda ou pode complementar. Construa sobre o que foi dito, referenciando ideias dos outros participantes pelo nome.`;
+      history[model].push({role:'user',content:followUp});
+      const text=await ask(model,history[model],round);
+      transcript.push({model:myName,round,text});
+      history[model].push({role:'assistant',content:text});
+    }));
+  }
+
+  addDivider('síntese final');
+  const allText=transcript.map(t=>`[${t.model}, rodada ${t.round}]:\n${t.text}`).join('\n\n');
+  const synthMsg=[{role:'user',content:`Você mediou uma mesa redonda entre IAs sobre: "${topic}".\n\nDebate completo:\n\n${allText}\n\nEscreva uma síntese final que: (1) identifica o consenso entre os participantes, (2) destaca as melhores ideias únicas de cada modelo, (3) aponta divergências relevantes, (4) propõe uma visão integrada que vai além do que qualquer um disse sozinho. Escreva em prosa fluida, sem marcadores.`}];
+  const sid=addMsg('synth','synth','Elaborando síntese...',true);
+  try{
+    const st=await callClaude(synthMsg);
+    updateMsg(sid,st,false);
+  }catch(e){
+    updateMsg(sid,'Erro na síntese: '+e.message,true);
+  }
+
+  btn.disabled=false;
+}
+
+document.getElementById('pInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&(e.ctrlKey||e.metaKey))startRound();
+});
+
+loadKeys();
+</script>
+</body>
+</html>
